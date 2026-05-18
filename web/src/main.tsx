@@ -11,14 +11,29 @@ const SCALE_DATA = {
 };
 
 // --- Utils ---
-const jijeokRound = (val, ndigits = 2) => Number(val.toFixed(ndigits));
+const jijeokRound = (val, ndigits = 2) => {
+  const p = Math.pow(10, ndigits);
+  const n = val * p;
+  const eps = 1e-9;
+  const integerPart = Math.floor(n + eps);
+  const remainder = (n + eps) - integerPart;
+  
+  if (Math.abs(remainder - 0.5) < eps * 10) {
+    const roundVal = integerPart % 2 === 0 ? integerPart : integerPart + 1;
+    return roundVal / p;
+  }
+  return Math.round(val * p) / p;
+};
 
 const jijeokFinalRound = (val) => {
-  const floorVal = Math.floor(val);
-  const remainder = val - floorVal;
-  if (remainder > 0.5) return floorVal + 1;
-  if (remainder < 0.5) return floorVal;
-  return floorVal % 2 === 0 ? floorVal : floorVal + 1;
+  const epsVal = Math.round(val * 1e9) / 1e9;
+  const floorVal = Math.floor(epsVal);
+  const remainder = epsVal - floorVal;
+  
+  if (Math.abs(remainder - 0.5) < 1e-9) {
+    return floorVal % 2 === 0 ? floorVal : floorVal + 1;
+  }
+  return remainder > 0.5 ? floorVal + 1 : floorVal;
 };
 
 const calculateArea = (pts) => {
@@ -79,6 +94,48 @@ function App() {
   const [selB2Idx, setSelB2Idx] = useState(0);
   const [intersections, setIntersections] = useState([]);
 
+  // 계산용 좌표 텍스트 입력창 (CLI의 Entry 대응)
+  const [lSplitText, setLSplitText] = useState("");
+  const [l1Text, setL1Text] = useState("");
+  const [l2Text, setL2Text] = useState("");
+
+  // points나 splitPoints, 인덱스가 바뀔 때 텍스트 필드를 실시간 동기화
+  useEffect(() => {
+    if (splitPoints.length >= 2 && selSplitIdx < splitPoints.length - 1) {
+      const p1 = splitPoints[selSplitIdx];
+      const p2 = splitPoints[selSplitIdx + 1];
+      if (p1 && p2) {
+        setLSplitText(`${p1.x.toFixed(2)},${p1.y.toFixed(2)} / ${p2.x.toFixed(2)},${p2.y.toFixed(2)}`);
+      }
+    } else {
+      setLSplitText("");
+    }
+  }, [splitPoints, selSplitIdx]);
+
+  useEffect(() => {
+    if (points.length > 0) {
+      const p1 = points[selB1Idx];
+      const p2 = points[(selB1Idx + 1) % points.length];
+      if (p1 && p2) {
+        setL1Text(`${p1.x.toFixed(2)},${p1.y.toFixed(2)} / ${p2.x.toFixed(2)},${p2.y.toFixed(2)}`);
+      }
+    } else {
+      setL1Text("");
+    }
+  }, [points, selB1Idx]);
+
+  useEffect(() => {
+    if (points.length > 0) {
+      const p1 = points[selB2Idx];
+      const p2 = points[(selB2Idx + 1) % points.length];
+      if (p1 && p2) {
+        setL2Text(`${p1.x.toFixed(2)},${p1.y.toFixed(2)} / ${p2.x.toFixed(2)},${p2.y.toFixed(2)}`);
+      }
+    } else {
+      setL2Text("");
+    }
+  }, [points, selB2Idx]);
+
   // State for Measurement
   const [jibunA, setJibunA] = useState("1164");
   const [jibunB, setJibunB] = useState("1164-4");
@@ -130,21 +187,31 @@ function App() {
     ]);
   };
 
-  // Logic: Intersection Calculation
+  // Logic: Intersection Calculation (파싱 방식)
   const handleCalcIntersects = () => {
-    if (splitPoints.length < 2 || points.length < 2) return;
-    const sp1 = splitPoints[selSplitIdx], sp2 = splitPoints[selSplitIdx + 1];
-    
-    const b1_p1 = points[selB1Idx], b1_p2 = points[(selB1Idx + 1) % points.length];
-    const b2_p1 = points[selB2Idx], b2_p2 = points[(selB2Idx + 1) % points.length];
-    
-    const i1 = intersect(b1_p1, b1_p2, sp1, sp2);
-    const i2 = intersect(b2_p1, b2_p2, sp1, sp2);
-    
-    const res = [];
-    if (i1) res.push({ name: "최종1", ...i1 });
-    if (i2) res.push({ name: "최종2", ...i2 });
-    setIntersections(res);
+    try {
+      const parseLineText = (s: string) => {
+        const l = s.split('/');
+        const p = (str: string) => str.replace(/\s+/g, '').split(',').map(Number);
+        const [x1, y1] = p(l[0]);
+        const [x2, y2] = p(l[1]);
+        return { p1: { x: x1, y: y1 }, p2: { x: x2, y: y2 } };
+      };
+
+      const lineSplit = parseLineText(lSplitText);
+      const lineB1 = parseLineText(l1Text);
+      const lineB2 = parseLineText(l2Text);
+
+      const i1 = intersect(lineB1.p1, lineB1.p2, lineSplit.p1, lineSplit.p2);
+      const i2 = intersect(lineB2.p1, lineB2.p2, lineSplit.p1, lineSplit.p2);
+
+      const res = [];
+      if (i1) res.push({ name: "최종1", ...i1 });
+      if (i2) res.push({ name: "최종2", ...i2 });
+      setIntersections(res);
+    } catch (e) {
+      alert("좌표 문자열 파싱 중 오류가 발생했습니다. 'X,Y / X,Y' 형식을 확인해 주세요.");
+    }
   };
 
   // Logic: Measurement Calculation
@@ -167,7 +234,9 @@ function App() {
     let f_a = jijeokFinalRound(c_a), f_b = jijeokFinalRound(c_b);
     if ((f_a + f_b) !== oArea) {
       const d_f = oArea - (f_a + f_b);
-      if ((c_a % 1) >= (c_b % 1)) f_a += d_f; else f_b += d_f;
+      const remA = c_a - Math.floor(c_a);
+      const remB = c_b - Math.floor(c_b);
+      if (remA >= remB) f_a += Math.round(d_f); else f_b += Math.round(d_f);
     }
 
     return { m_a, m_b, sum_m, ae, diff, status, c_a, c_b, f_a, f_b, oArea };
@@ -238,10 +307,25 @@ function App() {
           );
         })}
         {/* Split Points */}
-        {splitPoints.length >= 2 && splitPoints.slice(0, -1).map((p, i) => {
-          const [x1, y1] = tr(p.x, p.y), [x2, y2] = tr(splitPoints[i+1].x, splitPoints[i+1].y);
-          return <line key={`s-${i}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#f43f5e" strokeWidth="2" />;
-        })}
+        {splitPoints.length >= 2 && (() => {
+          return (
+            <>
+              {splitPoints.slice(0, -1).map((p, i) => {
+                const [x1, y1] = tr(p.x, p.y), [x2, y2] = tr(splitPoints[i+1].x, splitPoints[i+1].y);
+                return <line key={`s-${i}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#f43f5e" strokeWidth="2" />;
+              })}
+              {splitPoints.map((p, i) => {
+                const [x, y] = tr(p.x, p.y);
+                return (
+                  <g key={`s-lbl-${i}`}>
+                    <circle cx={x} cy={y} r="3" fill="#f43f5e" />
+                    <text x={x} y={y - 8} fontSize="10" fontWeight="bold" fill="#f59e0b" textAnchor="middle">분{i+1}</text>
+                  </g>
+                );
+              })}
+            </>
+          );
+        })()}
         {/* Intersections */}
         {intersections.map((p, i) => {
           const [x, y] = tr(p.x, p.y);
@@ -260,7 +344,7 @@ function App() {
     <div className="app-container">
       <header>
         <h1>Jijeok Master Pro</h1>
-        <p className="subtitle">지적기능사 실기 통합 자동화 도우미 (Web v1.0)</p>
+        <p className="subtitle">지적기능사 실기 통합 자동화 도우미 (Web v1.1)</p>
       </header>
 
       <main className="main-layout">
@@ -352,33 +436,53 @@ function App() {
                   <p style={{fontSize: '0.85rem', color: 'var(--text-muted)'}}>보조 분할점을 먼저 추가한 후, 경계선과의 교차점을 계산합니다.</p>
                 </div>
                 <div className="form-group">
-                  <label>보조점 방위각/거리</label>
+                  <label>기지점 X / Y</label>
+                  <div style={{display:'flex', gap:'0.5rem'}}>
+                    <input type="text" placeholder="453405.55" value={sBaseX} onChange={e => setSBaseX(e.target.value)} />
+                    <input type="text" placeholder="193726.90" value={sBaseY} onChange={e => setSBaseY(e.target.value)} />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label>보조점 방위각 (D-M-S) / 거리 (m)</label>
                   <div style={{display:'flex', gap:'0.5rem'}}>
                     <input type="text" placeholder="80-57-10.5" value={sAngle} onChange={e => setSAngle(e.target.value)} />
                     <input type="text" placeholder="169.23" value={sDist} onChange={e => setSDist(e.target.value)} />
                   </div>
                 </div>
-                <div style={{display: 'flex', gap: '0.5rem'}}>
+                <div style={{display: 'flex', gap: '0.5rem', marginBottom: '1rem'}}>
                   <button className="btn-primary" onClick={handleAddSplit}>보조점 추가</button>
                   <button className="btn-primary" style={{background: '#334155'}} onClick={loadSplitSample}>샘플 로드</button>
                 </div>
+                {splitPoints.length > 0 && (
+                  <table style={{marginBottom: '1.5rem'}}>
+                    <thead><tr><th>No.</th><th>X</th><th>Y</th></tr></thead>
+                    <tbody>
+                      {splitPoints.map((p, i) => (
+                        <tr key={i}><td>분{i+1}</td><td>{p.x.toFixed(2)}</td><td>{p.y.toFixed(2)}</td></tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
                 <div className="form-group" style={{marginTop: '1.5rem'}}>
                   <label>① 공통 분할선 선택</label>
-                  <select onChange={e => setSelSplitIdx(parseInt(e.target.value))}>
+                  <select value={selSplitIdx} onChange={e => setSelSplitIdx(parseInt(e.target.value))}>
                     {splitPoints.length >= 2 && splitPoints.slice(0,-1).map((_, i) => <option key={i} value={i}>분할선 분{i+1}-분{i+2}</option>)}
                   </select>
+                  <input type="text" value={lSplitText} onChange={e => setLSplitText(e.target.value)} style={{color: '#f43f5e', border: '1px solid rgba(244, 63, 94, 0.4)', borderRadius: '6px', padding: '0.5rem', width: '100%', marginTop: '0.35rem', background: 'rgba(15, 23, 42, 0.6)', fontSize: '0.875rem'}} />
                 </div>
                 <div className="form-group">
                   <label>② 교차점 1 경계 선택</label>
-                  <select onChange={e => setSelB1Idx(parseInt(e.target.value))}>
+                  <select value={selB1Idx} onChange={e => setSelB1Idx(parseInt(e.target.value))}>
                     {points.map((_, i) => <option key={i} value={i}>경계 {i+1}-{i === points.length-1 ? 1 : i+2}</option>)}
                   </select>
+                  <input type="text" value={l1Text} onChange={e => setL1Text(e.target.value)} style={{color: '#6366f1', border: '1px solid rgba(99, 102, 241, 0.4)', borderRadius: '6px', padding: '0.5rem', width: '100%', marginTop: '0.35rem', background: 'rgba(15, 23, 42, 0.6)', fontSize: '0.875rem'}} />
                 </div>
                 <div className="form-group">
                   <label>③ 교차점 2 경계 선택</label>
-                  <select onChange={e => setSelB2Idx(parseInt(e.target.value))}>
+                  <select value={selB2Idx} onChange={e => setSelB2Idx(parseInt(e.target.value))}>
                     {points.map((_, i) => <option key={i} value={i}>경계 {i+1}-{i === points.length-1 ? 1 : i+2}</option>)}
                   </select>
+                  <input type="text" value={l2Text} onChange={e => setL2Text(e.target.value)} style={{color: '#6366f1', border: '1px solid rgba(99, 102, 241, 0.4)', borderRadius: '6px', padding: '0.5rem', width: '100%', marginTop: '0.35rem', background: 'rgba(15, 23, 42, 0.6)', fontSize: '0.875rem'}} />
                 </div>
                 <button className="btn-primary" onClick={handleCalcIntersects}>최종 교차점 계산</button>
                 {intersections.length > 0 && (
@@ -391,30 +495,47 @@ function App() {
               </div>
             )}
 
-            {activeTab === 3 && areaResults && (
+            {activeTab === 3 && (
               <div>
-                <table>
-                  <thead>
-                    <tr><th>지번</th><th>측정면적</th><th>산출면적</th><th>결정면적</th></tr>
-                  </thead>
-                  <tbody>
-                    <tr><td>{jibunA}</td><td>{areaResults.m_a.toFixed(2)}</td><td>{areaResults.c_a.toFixed(2)}</td><td><strong>{areaResults.f_a}</strong></td></tr>
-                    <tr><td>{jibunB}</td><td>{areaResults.m_b.toFixed(2)}</td><td>{areaResults.c_b.toFixed(2)}</td><td><strong>{areaResults.f_b}</strong></td></tr>
-                    <tr style={{borderTop: '2px solid var(--primary)'}}>
-                      <td>합계</td><td>{areaResults.sum_m.toFixed(2)}</td><td>{areaResults.oArea.toFixed(2)}</td><td>{areaResults.oArea}</td>
-                    </tr>
-                  </tbody>
-                </table>
-                <div className="results-panel" style={{marginTop: '2rem', borderLeft: `5px solid ${areaResults.status === "적합" ? 'var(--success)' : 'var(--error)'}`}}>
-                  <p>▶ 허용공차(Ae): ±{areaResults.ae.toFixed(4)} ㎡</p>
-                  <p>▶ 실제오차: {areaResults.diff.toFixed(4)} ㎡</p>
-                  <p style={{fontWeight:'bold', fontSize: '1.2rem', color: areaResults.status === "적합" ? 'var(--success)' : 'var(--error)'}}>판정: {areaResults.status}</p>
+                <div className="results-panel" style={{marginBottom: '1rem', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem'}}>
+                  <div className="form-group" style={{marginBottom: 0}}>
+                    <label style={{fontSize: '0.8rem'}}>원지번</label>
+                    <input type="text" value={jibunA} onChange={e => setJibunA(e.target.value)} style={{padding: '0.25rem 0.5rem', fontSize: '0.9rem'}} />
+                  </div>
+                  <div className="form-group" style={{marginBottom: 0}}>
+                    <label style={{fontSize: '0.8rem'}}>분할지번</label>
+                    <input type="text" value={jibunB} onChange={e => setJibunB(e.target.value)} style={{padding: '0.25rem 0.5rem', fontSize: '0.9rem'}} />
+                  </div>
+                  <div className="form-group" style={{marginBottom: 0}}>
+                    <label style={{fontSize: '0.8rem'}}>공부상 원면적 (㎡)</label>
+                    <input type="text" value={origArea} onChange={e => setOrigArea(e.target.value)} style={{padding: '0.25rem 0.5rem', fontSize: '0.9rem'}} />
+                  </div>
                 </div>
+
+                {areaResults ? (
+                  <div>
+                    <table>
+                      <thead>
+                        <tr><th>지번</th><th>측정면적</th><th>산출면적</th><th>결정면적</th></tr>
+                      </thead>
+                      <tbody>
+                        <tr><td>{jibunA}</td><td>{areaResults.m_a.toFixed(2)}</td><td>{areaResults.c_a.toFixed(2)}</td><td><strong>{areaResults.f_a}</strong></td></tr>
+                        <tr><td>{jibunB}</td><td>{areaResults.m_b.toFixed(2)}</td><td>{areaResults.c_b.toFixed(2)}</td><td><strong>{areaResults.f_b}</strong></td></tr>
+                        <tr style={{borderTop: '2px solid var(--primary)'}}>
+                          <td>합계</td><td>{areaResults.sum_m.toFixed(2)}</td><td>{areaResults.oArea.toFixed(2)}</td><td>{areaResults.oArea}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <div className="results-panel" style={{marginTop: '2rem', borderLeft: `5px solid ${areaResults.status === "적합" ? 'var(--success)' : 'var(--error)'}`}}>
+                      <p>▶ 허용공차(Ae): ±{areaResults.ae.toFixed(4)} ㎡</p>
+                      <p>▶ 실제오차: {areaResults.diff.toFixed(4)} ㎡</p>
+                      <p style={{fontWeight:'bold', fontSize: '1.2rem', color: areaResults.status === "적합" ? 'var(--success)' : 'var(--error)'}}>판정: {areaResults.status}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <p style={{textAlign:'center', padding:'2rem', color: 'var(--text-muted)'}}>경계점과 교차점 계산이 완료되어야 면적을 측정할 수 있습니다.</p>
+                )}
               </div>
-            )}
-            
-            {activeTab === 3 && !areaResults && (
-              <p style={{textAlign:'center', padding:'2rem', color: 'var(--text-muted)'}}>경계점과 교차점 계산이 완료되어야 면적을 측정할 수 있습니다.</p>
             )}
 
             {activeTab === 4 && (
