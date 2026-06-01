@@ -222,7 +222,13 @@ function App() {
 
   // Logic: Measurement Calculation
   const areaResults = useMemo(() => {
-    if (points.length < 4 || intersections.length < 2) return null;
+    if (points.length < 3) return null;
+    const totalArea = calculateArea(points);
+    
+    if (points.length < 4 || intersections.length < 2) {
+      return { totalArea };
+    }
+    
     const oArea = parseFloat(origArea);
     const M = parseFloat(scale.split('/')[1]);
     
@@ -245,7 +251,7 @@ function App() {
       if (remA >= remB) f_a += Math.round(d_f); else f_b += Math.round(d_f);
     }
 
-    return { m_a, m_b, sum_m, ae, diff, status, c_a, c_b, f_a, f_b, oArea };
+    return { m_a, m_b, sum_m, ae, diff, status, c_a, c_b, f_a, f_b, oArea, totalArea };
   }, [points, intersections, origArea, scale]);
 
   // Logic: DXF Export
@@ -569,24 +575,35 @@ function App() {
             <h4 style={{ fontSize: '0.9rem', color: 'var(--accent)', fontWeight: 'bold' }}>📍 실시간 도면 면적 정보</h4>
             {areaResults ? (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '0.85rem' }}>
-                <div>
-                  <p><span style={{ color: 'var(--text-muted)' }}>{jibunA} (측정):</span> <strong>{areaResults.m_a.toFixed(2)} ㎡</strong></p>
-                  <p><span style={{ color: 'var(--text-muted)' }}>{jibunA} (결정):</span> <strong style={{ color: 'var(--success)' }}>{areaResults.f_a} ㎡</strong></p>
-                </div>
-                <div>
-                  <p><span style={{ color: 'var(--text-muted)' }}>{jibunB} (측정):</span> <strong>{areaResults.m_b.toFixed(2)} ㎡</strong></p>
-                  <p><span style={{ color: 'var(--text-muted)' }}>{jibunB} (결정):</span> <strong style={{ color: 'var(--success)' }}>{areaResults.f_b} ㎡</strong></p>
-                </div>
-                <div style={{ gridColumn: 'span 2', borderTop: '1px dashed var(--border)', paddingTop: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>측정 합계: <strong>{areaResults.sum_m.toFixed(2)} ㎡</strong> (공부: {areaResults.oArea} ㎡)</span>
-                  <span style={{ fontWeight: 'bold', color: areaResults.status === "적합" ? 'var(--success)' : 'var(--error)' }}>
-                    판정: {areaResults.status} ({areaResults.diff.toFixed(4)} ㎡)
-                  </span>
-                </div>
+                {areaResults.m_a !== undefined ? (
+                  <>
+                    <div>
+                      <p><span style={{ color: 'var(--text-muted)' }}>{jibunA} (측정):</span> <strong>{areaResults.m_a.toFixed(2)} ㎡</strong></p>
+                      <p><span style={{ color: 'var(--text-muted)' }}>{jibunA} (결정):</span> <strong style={{ color: 'var(--success)' }}>{areaResults.f_a} ㎡</strong></p>
+                    </div>
+                    <div>
+                      <p><span style={{ color: 'var(--text-muted)' }}>{jibunB} (측정):</span> <strong>{areaResults.m_b.toFixed(2)} ㎡</strong></p>
+                      <p><span style={{ color: 'var(--text-muted)' }}>{jibunB} (결정):</span> <strong style={{ color: 'var(--success)' }}>{areaResults.f_b} ㎡</strong></p>
+                    </div>
+                    <div style={{ gridColumn: 'span 2', borderTop: '1px dashed var(--border)', paddingTop: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>측정 합계: <strong>{areaResults.sum_m.toFixed(2)} ㎡</strong> (공부: {areaResults.oArea} ㎡)</span>
+                      <span style={{ fontWeight: 'bold', color: areaResults.status === "적합" ? 'var(--success)' : 'var(--error)' }}>
+                        판정: {areaResults.status} ({areaResults.diff.toFixed(4)} ㎡)
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <p>전체 경계면적 (측정): <strong style={{ color: 'var(--accent)', fontSize: '1rem' }}>{areaResults.totalArea.toFixed(2)} ㎡</strong></p>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                      💡 '분할/교차' 탭에서 최종 교차점 계산을 완료하면 필지별 분할 면적이 계산됩니다.
+                    </p>
+                  </div>
+                )}
               </div>
             ) : (
               <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                경계점 및 교차점(최종분할점 2개) 계산을 완료하면 이곳에 면적이 계산됩니다.
+                경계점(최소 3개 이상)을 입력하면 전체 경계면적이 계산됩니다.
               </p>
             )}
           </div>
