@@ -52,13 +52,17 @@ class JijeokApp:
         else: return floor_val if floor_val % 2 == 0 else floor_val + 1
 
     def calculate_area(self, pts):
-        # 지적 좌표계: X=수직(y), Y=수평(x)
-        # Shoelace Formula: 0.5 * |sum(Y_i*X_{i+1} - Y_{i+1}*X_i)|
-        area = 0; n = len(pts)
+        if len(pts) < 3: return 0.0
+        ref_x = pts[0]['x']
+        ref_y = pts[0]['y']
+        area = 0.0; n = len(pts)
         for i in range(n):
             j = (i + 1) % n
-            area += pts[i]['y'] * pts[j]['x']
-            area -= pts[j]['y'] * pts[i]['x']
+            xi = pts[i]['x'] - ref_x
+            yi = pts[i]['y'] - ref_y
+            xj = pts[j]['x'] - ref_x
+            yj = pts[j]['y'] - ref_y
+            area += yi * xj - yj * xi
         return abs(area) / 2.0
 
     # ------------------------------------------

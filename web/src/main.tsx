@@ -37,12 +37,18 @@ const jijeokFinalRound = (val) => {
 };
 
 const calculateArea = (pts) => {
+  if (pts.length < 3) return 0;
+  const refX = pts[0].x;
+  const refY = pts[0].y;
   let area = 0;
   const n = pts.length;
   for (let i = 0; i < n; i++) {
     const j = (i + 1) % n;
-    area += pts[i].y * pts[j].x;
-    area -= pts[j].y * pts[i].x;
+    const xi = pts[i].x - refX;
+    const yi = pts[i].y - refY;
+    const xj = pts[j].x - refX;
+    const yj = pts[j].y - refY;
+    area += yi * xj - yj * xi;
   }
   return Math.abs(area) / 2.0;
 };
@@ -551,12 +557,39 @@ function App() {
           </div>
         </div>
 
-        <div className="map-container">
-          {svgElements ? svgElements : (
-            <div style={{display:'flex', height:'100%', alignItems:'center', justifyContent:'center', color:'#ccc'}}>
-              좌표를 입력하면 도면이 여기에 표시됩니다.
-            </div>
-          )}
+        <div className="map-container" style={{ display: 'flex', flexDirection: 'column', height: 'auto', minHeight: '520px' }}>
+          <div style={{ flex: 1, minHeight: '430px', position: 'relative' }}>
+            {svgElements ? svgElements : (
+              <div style={{display:'flex', height:'100%', alignItems:'center', justifyContent:'center', color:'#ccc'}}>
+                좌표를 입력하면 도면이 여기에 표시됩니다.
+              </div>
+            )}
+          </div>
+          <div style={{ background: '#1e293b', borderTop: '2px solid var(--border)', padding: '1rem', color: 'white', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <h4 style={{ fontSize: '0.9rem', color: 'var(--accent)', fontWeight: 'bold' }}>📍 실시간 도면 면적 정보</h4>
+            {areaResults ? (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '0.85rem' }}>
+                <div>
+                  <p><span style={{ color: 'var(--text-muted)' }}>{jibunA} (측정):</span> <strong>{areaResults.m_a.toFixed(2)} ㎡</strong></p>
+                  <p><span style={{ color: 'var(--text-muted)' }}>{jibunA} (결정):</span> <strong style={{ color: 'var(--success)' }}>{areaResults.f_a} ㎡</strong></p>
+                </div>
+                <div>
+                  <p><span style={{ color: 'var(--text-muted)' }}>{jibunB} (측정):</span> <strong>{areaResults.m_b.toFixed(2)} ㎡</strong></p>
+                  <p><span style={{ color: 'var(--text-muted)' }}>{jibunB} (결정):</span> <strong style={{ color: 'var(--success)' }}>{areaResults.f_b} ㎡</strong></p>
+                </div>
+                <div style={{ gridColumn: 'span 2', borderTop: '1px dashed var(--border)', paddingTop: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>측정 합계: <strong>{areaResults.sum_m.toFixed(2)} ㎡</strong> (공부: {areaResults.oArea} ㎡)</span>
+                  <span style={{ fontWeight: 'bold', color: areaResults.status === "적합" ? 'var(--success)' : 'var(--error)' }}>
+                    판정: {areaResults.status} ({areaResults.diff.toFixed(4)} ㎡)
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                경계점 및 교차점(최종분할점 2개) 계산을 완료하면 이곳에 면적이 계산됩니다.
+              </p>
+            )}
+          </div>
         </div>
       </main>
     </div>
