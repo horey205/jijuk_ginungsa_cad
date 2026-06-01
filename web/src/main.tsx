@@ -74,11 +74,7 @@ function App() {
   const [activeTab, setActiveTab] = useState(0);
   
   // State for Reference Points List (기준점 목록)
-  const [refPoints, setRefPoints] = useState([
-    { name: "강원14", x: "500471.46", y: "202320.22" },
-    { name: "2015", x: "500486.78", y: "202225.71" },
-    { name: "2016", x: "500544.64", y: "202170.48" }
-  ]);
+  const [refPoints, setRefPoints] = useState([]);
   const [newRefName, setNewRefName] = useState("");
   const [newRefX, setNewRefX] = useState("");
   const [newRefY, setNewRefY] = useState("");
@@ -435,7 +431,17 @@ function App() {
                     <input type="text" placeholder="202320.22" value={newRefY} onChange={e => setNewRefY(e.target.value)} />
                   </div>
                 </div>
-                <button className="btn-primary" onClick={handleAddRefPoint} style={{ marginTop: 0 }}>기준점 추가</button>
+                 <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                   <button className="btn-primary" onClick={handleAddRefPoint} style={{ marginTop: 0 }}>기준점 추가</button>
+                   <button className="btn-primary" style={{ background: '#334155', marginTop: 0 }} onClick={() => {
+                     setRefPoints([
+                       { name: "강원14", x: "500471.46", y: "202320.22" },
+                       { name: "2015", x: "500486.78", y: "202225.71" },
+                       { name: "2016", x: "500544.64", y: "202170.48" }
+                     ]);
+                     setSelRefIdx(0);
+                   }}>샘플 로드</button>
+                 </div>
                 
                 <h3 style={{ fontSize: '1rem', marginTop: '2rem', marginBottom: '0.5rem', color: 'var(--accent)' }}>📋 등록된 기준점 목록</h3>
                 <table style={{ marginBottom: '1rem' }}>
