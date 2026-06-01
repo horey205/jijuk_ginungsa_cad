@@ -73,10 +73,16 @@ const intersect = (l1_p1, l1_p2, l2_p1, l2_p2) => {
 function App() {
   const [activeTab, setActiveTab] = useState(0);
   
-  // State for Reference Point (기준점)
-  const [refName, setRefName] = useState("강원14");
-  const [refX, setRefX] = useState("500471.46");
-  const [refY, setRefY] = useState("202320.22");
+  // State for Reference Points List (기준점 목록)
+  const [refPoints, setRefPoints] = useState([
+    { name: "강원14", x: "500471.46", y: "202320.22" },
+    { name: "2015", x: "500486.78", y: "202225.71" },
+    { name: "2016", x: "500544.64", y: "202170.48" }
+  ]);
+  const [newRefName, setNewRefName] = useState("");
+  const [newRefX, setNewRefX] = useState("");
+  const [newRefY, setNewRefY] = useState("");
+  const [selRefIdx, setSelRefIdx] = useState(0);
 
   // State for Dogwak
   const [baseX, setBaseX] = useState("500471.46");
@@ -110,11 +116,33 @@ function App() {
   const [l1Text, setL1Text] = useState("");
   const [l2Text, setL2Text] = useState("");
 
-  // Sync inputs with Reference Point when it changes
-  useEffect(() => {
-    setBaseX(refX);
-    setBaseY(refY);
-  }, [refX, refY]);
+  // Add new Reference Point
+  const handleAddRefPoint = () => {
+    if (!newRefName || !newRefX || !newRefY) {
+      alert("기준점 이름과 X, Y 좌표를 모두 입력해주세요.");
+      return;
+    }
+    setRefPoints([...refPoints, { name: newRefName, x: newRefX, y: newRefY }]);
+    setNewRefName("");
+    setNewRefX("");
+    setNewRefY("");
+  };
+
+  // Sync inputs with selected Reference Point
+  const applySelectedRef = (tabIndex) => {
+    const selected = refPoints[selRefIdx];
+    if (!selected) return;
+    if (tabIndex === 1) { // Dogwak
+      setBaseX(selected.x);
+      setBaseY(selected.y);
+    } else if (tabIndex === 2) { // Boundary
+      setTargetX(selected.x);
+      setTargetY(selected.y);
+    } else if (tabIndex === 3) { // Split
+      setSBaseX(selected.x);
+      setSBaseY(selected.y);
+    }
+  };
 
   // points나 splitPoints, 인덱스가 바뀔 때 텍스트 필드를 실시간 동기화
   useEffect(() => {
@@ -367,7 +395,7 @@ function App() {
     <div className="app-container">
       <header>
         <h1>Jijeok Master Pro</h1>
-        <p className="subtitle">지적기능사 실기 통합 자동화 도우미 (Web v1.2)</p>
+        <p className="subtitle">지적기능사 실기 통합 자동화 도우미 (Web v1.3)</p>
       </header>
 
       <main className="main-layout">
@@ -391,42 +419,73 @@ function App() {
             {activeTab === 0 && (
               <div className="form-content">
                 <div className="results-panel" style={{marginBottom: '1rem'}}>
-                  <p style={{fontSize: '0.85rem', color: 'var(--text-muted)'}}>문제지에서 제공한 기준점 명칭과 X, Y 좌표를 입력합니다.</p>
+                  <p style={{fontSize: '0.85rem', color: 'var(--text-muted)'}}>제공된 지적기준점 명칭과 X, Y 좌표를 목록에 추가합니다.</p>
                 </div>
-                <div className="form-group">
-                  <label>기준점 명칭</label>
-                  <input type="text" value={refName} onChange={e => setRefName(e.target.value)} />
+                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '0.5rem', marginBottom: '1rem' }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label>기준점 명칭</label>
+                    <input type="text" placeholder="예: 강원14" value={newRefName} onChange={e => setNewRefName(e.target.value)} />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label>X 좌표</label>
+                    <input type="text" placeholder="500471.46" value={newRefX} onChange={e => setNewRefX(e.target.value)} />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label>Y 좌표</label>
+                    <input type="text" placeholder="202320.22" value={newRefY} onChange={e => setNewRefY(e.target.value)} />
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label>기준점 X 좌표</label>
-                  <input type="text" value={refX} onChange={e => setRefX(e.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label>기준점 Y 좌표</label>
-                  <input type="text" value={refY} onChange={e => setRefY(e.target.value)} />
-                </div>
-                <div className="results-panel" style={{background: 'rgba(34, 211, 238, 0.1)', borderColor: 'rgba(34, 211, 238, 0.2)'}}>
-                  <p style={{fontSize: '0.85rem', fontWeight: '500', color: 'var(--accent)'}}>
-                    ℹ️ 입력한 기준점 좌표는 도곽선, 경계선 및 분할/교차 메뉴에서 즉시 연동하여 사용할 수 있습니다.
-                  </p>
-                </div>
+                <button className="btn-primary" onClick={handleAddRefPoint} style={{ marginTop: 0 }}>기준점 추가</button>
+                
+                <h3 style={{ fontSize: '1rem', marginTop: '2rem', marginBottom: '0.5rem', color: 'var(--accent)' }}>📋 등록된 기준점 목록</h3>
+                <table style={{ marginBottom: '1rem' }}>
+                  <thead>
+                    <tr>
+                      <th>No.</th>
+                      <th>기준점 명칭</th>
+                      <th>X 좌표</th>
+                      <th>Y 좌표</th>
+                      <th>관리</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {refPoints.map((ref, idx) => (
+                      <tr key={idx} style={{ background: selRefIdx === idx ? 'rgba(99, 102, 241, 0.1)' : 'transparent' }}>
+                        <td>{idx + 1}</td>
+                        <td style={{ fontWeight: 'bold' }}>{ref.name}</td>
+                        <td>{parseFloat(ref.x).toFixed(2)}</td>
+                        <td>{parseFloat(ref.y).toFixed(2)}</td>
+                        <td>
+                          <button className="btn-primary" style={{ marginTop: 0, padding: '0.15rem 0.4rem', width: 'auto', fontSize: '0.7rem', background: selRefIdx === idx ? 'var(--success)' : '#475569' }} onClick={() => setSelRefIdx(idx)}>
+                            {selRefIdx === idx ? "선택됨" : "선택"}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
 
             {activeTab === 1 && (
               <div className="form-content">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <label style={{ margin: 0 }}>기준점 좌표 사용</label>
-                  <button className="btn-primary" style={{ marginTop: 0, padding: '0.25rem 0.5rem', width: 'auto', fontSize: '0.75rem' }} onClick={() => { setBaseX(refX); setBaseY(refY); }}>
-                    기준점 좌표 불러오기
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end', marginBottom: '1rem', background: 'rgba(15, 23, 42, 0.4)', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.75rem' }}>가져올 기준점 선택</label>
+                    <select value={selRefIdx} onChange={e => setSelRefIdx(parseInt(e.target.value))} style={{ padding: '0.4rem 0.5rem', fontSize: '0.85rem' }}>
+                      {refPoints.map((ref, idx) => <option key={idx} value={idx}>{ref.name}</option>)}
+                    </select>
+                  </div>
+                  <button className="btn-primary" style={{ marginTop: 0, width: 'auto', padding: '0.45rem 1rem', fontSize: '0.8rem' }} onClick={() => applySelectedRef(1)}>
+                    좌표 불러오기
                   </button>
                 </div>
                 <div className="form-group">
-                  <label>원점 X ({refName})</label>
+                  <label>원점 X (종선)</label>
                   <input type="text" value={baseX} onChange={e => setBaseX(e.target.value)} />
                 </div>
                 <div className="form-group">
-                  <label>원점 Y ({refName})</label>
+                  <label>원점 Y (횡선)</label>
                   <input type="text" value={baseY} onChange={e => setBaseY(e.target.value)} />
                 </div>
                 <div className="form-group">
@@ -454,10 +513,15 @@ function App() {
 
             {activeTab === 2 && (
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <label style={{ margin: 0 }}>기지점 입력 좌표</label>
-                  <button className="btn-primary" style={{ marginTop: 0, padding: '0.25rem 0.5rem', width: 'auto', fontSize: '0.75rem' }} onClick={() => { setTargetX(refX); setTargetY(refY); }}>
-                    기준점 ({refName}) 좌표로 변경
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end', marginBottom: '1rem', background: 'rgba(15, 23, 42, 0.4)', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.75rem' }}>기지국 기준점 선택</label>
+                    <select value={selRefIdx} onChange={e => setSelRefIdx(parseInt(e.target.value))} style={{ padding: '0.4rem 0.5rem', fontSize: '0.85rem' }}>
+                      {refPoints.map((ref, idx) => <option key={idx} value={idx}>{ref.name}</option>)}
+                    </select>
+                  </div>
+                  <button className="btn-primary" style={{ marginTop: 0, width: 'auto', padding: '0.45rem 1rem', fontSize: '0.8rem' }} onClick={() => applySelectedRef(2)}>
+                    좌표 불러오기
                   </button>
                 </div>
                 <div className="form-group">
@@ -506,13 +570,19 @@ function App() {
                 <div className="results-panel" style={{marginBottom: '1rem'}}>
                   <p style={{fontSize: '0.85rem', color: 'var(--text-muted)'}}>보조 분할점을 먼저 추가한 후, 경계선과의 교차점을 계산합니다.</p>
                 </div>
-                <div className="form-group">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                    <label style={{ margin: 0 }}>기지점 X / Y</label>
-                    <button className="btn-primary" style={{ marginTop: 0, padding: '0.2rem 0.4rem', width: 'auto', fontSize: '0.7rem' }} onClick={() => { setSBaseX(refX); setSBaseY(refY); }}>
-                      기준점 좌표 적용
-                    </button>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end', marginBottom: '1rem', background: 'rgba(15, 23, 42, 0.4)', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.75rem' }}>분할 기지 기준점 선택</label>
+                    <select value={selRefIdx} onChange={e => setSelRefIdx(parseInt(e.target.value))} style={{ padding: '0.4rem 0.5rem', fontSize: '0.85rem' }}>
+                      {refPoints.map((ref, idx) => <option key={idx} value={idx}>{ref.name}</option>)}
+                    </select>
                   </div>
+                  <button className="btn-primary" style={{ marginTop: 0, width: 'auto', padding: '0.45rem 1rem', fontSize: '0.8rem' }} onClick={() => applySelectedRef(3)}>
+                    좌표 불러오기
+                  </button>
+                </div>
+                <div className="form-group">
+                  <label>기지점 X / Y</label>
                   <div style={{display:'flex', gap:'0.5rem'}}>
                     <input type="text" placeholder="453405.55" value={sBaseX} onChange={e => setSBaseX(e.target.value)} />
                     <input type="text" placeholder="193726.90" value={sBaseY} onChange={e => setSBaseY(e.target.value)} />
