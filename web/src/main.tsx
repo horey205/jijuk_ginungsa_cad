@@ -81,25 +81,25 @@ function App() {
   const [selRefIdx, setSelRefIdx] = useState(0);
 
   // State for Dogwak
-  const [baseX, setBaseX] = useState("500471.46");
-  const [baseY, setBaseY] = useState("202320.22");
+  const [baseX, setBaseX] = useState("");
+  const [baseY, setBaseY] = useState("");
   const [scale, setScale] = useState("1/1000");
   const [origin, setOrigin] = useState("지역");
   const [dogwakPoints, setDogwakPoints] = useState(null);
 
   // State for Boundary
   const [points, setPoints] = useState([]);
-  const [targetX, setTargetX] = useState("500486.78"); // default to 2015점 X
-  const [targetY, setTargetY] = useState("202225.71"); // default to 2015점 Y
-  const [targetAngle, setTargetAngle] = useState("256-57-38.61");
-  const [targetDist, setTargetDist] = useState("85.59");
+  const [targetX, setTargetX] = useState(""); 
+  const [targetY, setTargetY] = useState(""); 
+  const [targetAngle, setTargetAngle] = useState("");
+  const [targetDist, setTargetDist] = useState("");
 
   // State for Split
   const [splitPoints, setSplitPoints] = useState([]);
-  const [sBaseX, setSBaseX] = useState("500486.78"); // default to 2015점 X
-  const [sBaseY, setSBaseY] = useState("202225.71"); // default to 2015점 Y
-  const [sAngle, setSAngle] = useState("213-26-05.90");
-  const [sDist, setSDist] = useState("128.95");
+  const [sBaseX, setSBaseX] = useState(""); 
+  const [sBaseY, setSBaseY] = useState(""); 
+  const [sAngle, setSAngle] = useState("");
+  const [sDist, setSDist] = useState("");
   
   // Selection for Intersection
   const [selSplitIdx, setSelSplitIdx] = useState(0);
@@ -178,9 +178,9 @@ function App() {
   }, [points, selB2Idx]);
 
   // State for Measurement
-  const [jibunA, setJibunA] = useState("3450");
-  const [jibunB, setJibunB] = useState("3450-4");
-  const [origArea, setOrigArea] = useState("6798");
+  const [jibunA, setJibunA] = useState("");
+  const [jibunB, setJibunB] = useState("");
+  const [origArea, setOrigArea] = useState("");
 
   // Logic: Dogwak Calculation
   const handleCalcDogwak = () => {
