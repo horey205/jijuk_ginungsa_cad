@@ -356,7 +356,7 @@ function App() {
     <div className="app-container">
       <header>
         <h1>Jijeok Master Pro</h1>
-        <p className="subtitle">지적기능사 실기 통합 자동화 도우미 (Web v1.1)</p>
+        <p className="subtitle">지적기능사 실기 통합 자동화 도우미 (Web v1.2)</p>
       </header>
 
       <main className="main-layout">
