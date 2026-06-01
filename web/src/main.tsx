@@ -73,26 +73,31 @@ const intersect = (l1_p1, l1_p2, l2_p1, l2_p2) => {
 function App() {
   const [activeTab, setActiveTab] = useState(0);
   
+  // State for Reference Point (기준점)
+  const [refName, setRefName] = useState("강원14");
+  const [refX, setRefX] = useState("500471.46");
+  const [refY, setRefY] = useState("202320.22");
+
   // State for Dogwak
-  const [baseX, setBaseX] = useState("453405.55");
-  const [baseY, setBaseY] = useState("193726.90");
-  const [scale, setScale] = useState("1/1200");
+  const [baseX, setBaseX] = useState("500471.46");
+  const [baseY, setBaseY] = useState("202320.22");
+  const [scale, setScale] = useState("1/1000");
   const [origin, setOrigin] = useState("지역");
   const [dogwakPoints, setDogwakPoints] = useState(null);
 
   // State for Boundary
   const [points, setPoints] = useState([]);
-  const [targetX, setTargetX] = useState("453405.55");
-  const [targetY, setTargetY] = useState("193726.90");
-  const [targetAngle, setTargetAngle] = useState("88-47-13.26");
-  const [targetDist, setTargetDist] = useState("119.99");
+  const [targetX, setTargetX] = useState("500486.78"); // default to 2015점 X
+  const [targetY, setTargetY] = useState("202225.71"); // default to 2015점 Y
+  const [targetAngle, setTargetAngle] = useState("256-57-38.61");
+  const [targetDist, setTargetDist] = useState("85.59");
 
   // State for Split
   const [splitPoints, setSplitPoints] = useState([]);
-  const [sBaseX, setSBaseX] = useState("453405.55");
-  const [sBaseY, setSBaseY] = useState("193726.90");
-  const [sAngle, setSAngle] = useState("80-57-10.5");
-  const [sDist, setSDist] = useState("169.23");
+  const [sBaseX, setSBaseX] = useState("500486.78"); // default to 2015점 X
+  const [sBaseY, setSBaseY] = useState("202225.71"); // default to 2015점 Y
+  const [sAngle, setSAngle] = useState("213-26-05.90");
+  const [sDist, setSDist] = useState("128.95");
   
   // Selection for Intersection
   const [selSplitIdx, setSelSplitIdx] = useState(0);
@@ -104,6 +109,12 @@ function App() {
   const [lSplitText, setLSplitText] = useState("");
   const [l1Text, setL1Text] = useState("");
   const [l2Text, setL2Text] = useState("");
+
+  // Sync inputs with Reference Point when it changes
+  useEffect(() => {
+    setBaseX(refX);
+    setBaseY(refY);
+  }, [refX, refY]);
 
   // points나 splitPoints, 인덱스가 바뀔 때 텍스트 필드를 실시간 동기화
   useEffect(() => {
@@ -143,9 +154,9 @@ function App() {
   }, [points, selB2Idx]);
 
   // State for Measurement
-  const [jibunA, setJibunA] = useState("1164");
-  const [jibunB, setJibunB] = useState("1164-4");
-  const [origArea, setOrigArea] = useState("9034");
+  const [jibunA, setJibunA] = useState("3450");
+  const [jibunB, setJibunB] = useState("3450-4");
+  const [origArea, setOrigArea] = useState("6798");
 
   // Logic: Dogwak Calculation
   const handleCalcDogwak = () => {
@@ -363,6 +374,7 @@ function App() {
         <div className="card">
           <div className="tabs">
             {[
+              { icon: <MapPin size={18}/>, label: "기준점" },
               { icon: <Layers size={18}/>, label: "도곽선" },
               { icon: <MapPin size={18}/>, label: "경계선" },
               { icon: <Scissors size={18}/>, label: "분할/교차" },
@@ -378,12 +390,43 @@ function App() {
           <div className="tab-content">
             {activeTab === 0 && (
               <div className="form-content">
+                <div className="results-panel" style={{marginBottom: '1rem'}}>
+                  <p style={{fontSize: '0.85rem', color: 'var(--text-muted)'}}>문제지에서 제공한 기준점 명칭과 X, Y 좌표를 입력합니다.</p>
+                </div>
                 <div className="form-group">
-                  <label>기준점 X</label>
+                  <label>기준점 명칭</label>
+                  <input type="text" value={refName} onChange={e => setRefName(e.target.value)} />
+                </div>
+                <div className="form-group">
+                  <label>기준점 X 좌표</label>
+                  <input type="text" value={refX} onChange={e => setRefX(e.target.value)} />
+                </div>
+                <div className="form-group">
+                  <label>기준점 Y 좌표</label>
+                  <input type="text" value={refY} onChange={e => setRefY(e.target.value)} />
+                </div>
+                <div className="results-panel" style={{background: 'rgba(34, 211, 238, 0.1)', borderColor: 'rgba(34, 211, 238, 0.2)'}}>
+                  <p style={{fontSize: '0.85rem', fontWeight: '500', color: 'var(--accent)'}}>
+                    ℹ️ 입력한 기준점 좌표는 도곽선, 경계선 및 분할/교차 메뉴에서 즉시 연동하여 사용할 수 있습니다.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 1 && (
+              <div className="form-content">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <label style={{ margin: 0 }}>기준점 좌표 사용</label>
+                  <button className="btn-primary" style={{ marginTop: 0, padding: '0.25rem 0.5rem', width: 'auto', fontSize: '0.75rem' }} onClick={() => { setBaseX(refX); setBaseY(refY); }}>
+                    기준점 좌표 불러오기
+                  </button>
+                </div>
+                <div className="form-group">
+                  <label>원점 X ({refName})</label>
                   <input type="text" value={baseX} onChange={e => setBaseX(e.target.value)} />
                 </div>
                 <div className="form-group">
-                  <label>기준점 Y</label>
+                  <label>원점 Y ({refName})</label>
                   <input type="text" value={baseY} onChange={e => setBaseY(e.target.value)} />
                 </div>
                 <div className="form-group">
@@ -399,7 +442,7 @@ function App() {
                     <option value="세계">세계 (60만)</option>
                   </select>
                 </div>
-                <button className="btn-primary" onClick={handleCalcDogwak}>도곽 좌표 계산</button>
+                <button className="btn-primary" onClick={handleCalcDogwak}>도곽선 계산 실행</button>
                 {dogwakPoints && (
                   <div className="results-panel">
                     <p>P1 (좌하): {dogwakPoints.p1.x.toLocaleString()}, {dogwakPoints.p1.y.toLocaleString()}</p>
@@ -409,8 +452,14 @@ function App() {
               </div>
             )}
 
-            {activeTab === 1 && (
+            {activeTab === 2 && (
               <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <label style={{ margin: 0 }}>기지점 입력 좌표</label>
+                  <button className="btn-primary" style={{ marginTop: 0, padding: '0.25rem 0.5rem', width: 'auto', fontSize: '0.75rem' }} onClick={() => { setTargetX(refX); setTargetY(refY); }}>
+                    기준점 ({refName}) 좌표로 변경
+                  </button>
+                </div>
                 <div className="form-group">
                   <label>기지점 X</label>
                   <input type="text" value={targetX} onChange={e => setTargetX(e.target.value)} />
@@ -429,7 +478,17 @@ function App() {
                 </div>
                 <div style={{display: 'flex', gap: '0.5rem'}}>
                   <button className="btn-primary" onClick={handleAddPoint}>점 추가</button>
-                  <button className="btn-primary" style={{background: '#334155'}} onClick={loadSample}>샘플 로드</button>
+                  <button className="btn-primary" style={{background: '#334155'}} onClick={() => {
+                    setTargetX("500486.78");
+                    setTargetY("202225.71");
+                    setPoints([
+                      { x: 500467.47, y: 202142.33 },
+                      { x: 500462.24, y: 202198.01 },
+                      { x: 500408.36, y: 202244.33 },
+                      { x: 500363.75, y: 202179.46 },
+                      { x: 500410.23, y: 202139.30 }
+                    ]);
+                  }}>샘플 로드</button>
                 </div>
                 <table>
                   <thead><tr><th>No.</th><th>X</th><th>Y</th></tr></thead>
@@ -442,13 +501,18 @@ function App() {
               </div>
             )}
 
-            {activeTab === 2 && (
+            {activeTab === 3 && (
               <div>
                 <div className="results-panel" style={{marginBottom: '1rem'}}>
                   <p style={{fontSize: '0.85rem', color: 'var(--text-muted)'}}>보조 분할점을 먼저 추가한 후, 경계선과의 교차점을 계산합니다.</p>
                 </div>
                 <div className="form-group">
-                  <label>기지점 X / Y</label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                    <label style={{ margin: 0 }}>기지점 X / Y</label>
+                    <button className="btn-primary" style={{ marginTop: 0, padding: '0.2rem 0.4rem', width: 'auto', fontSize: '0.7rem' }} onClick={() => { setSBaseX(refX); setSBaseY(refY); }}>
+                      기준점 좌표 적용
+                    </button>
+                  </div>
                   <div style={{display:'flex', gap:'0.5rem'}}>
                     <input type="text" placeholder="453405.55" value={sBaseX} onChange={e => setSBaseX(e.target.value)} />
                     <input type="text" placeholder="193726.90" value={sBaseY} onChange={e => setSBaseY(e.target.value)} />
@@ -463,7 +527,14 @@ function App() {
                 </div>
                 <div style={{display: 'flex', gap: '0.5rem', marginBottom: '1rem'}}>
                   <button className="btn-primary" onClick={handleAddSplit}>보조점 추가</button>
-                  <button className="btn-primary" style={{background: '#334155'}} onClick={loadSplitSample}>샘플 로드</button>
+                  <button className="btn-primary" style={{background: '#334155'}} onClick={() => {
+                    setSBaseX("500486.78");
+                    setSBaseY("202225.71");
+                    setSplitPoints([
+                      { x: 500379.17, y: 202154.66 },
+                      { x: 500434.35, y: 202241.78 }
+                    ]);
+                  }}>샘플 로드</button>
                 </div>
                 {splitPoints.length > 0 && (
                   <table style={{marginBottom: '1.5rem'}}>
@@ -507,7 +578,7 @@ function App() {
               </div>
             )}
 
-            {activeTab === 3 && (
+            {activeTab === 4 && (
               <div>
                 <div className="results-panel" style={{marginBottom: '1rem', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem'}}>
                   <div className="form-group" style={{marginBottom: 0}}>
@@ -528,13 +599,39 @@ function App() {
                   <div>
                     <table>
                       <thead>
-                        <tr><th>지번</th><th>측정면적</th><th>산출면적</th><th>결정면적</th></tr>
+                        <tr>
+                          <th>지번</th>
+                          <th>측정면적</th>
+                          <th>보정계수</th>
+                          <th>원면적</th>
+                          <th>산출면적</th>
+                          <th>결정면적</th>
+                        </tr>
                       </thead>
                       <tbody>
-                        <tr><td>{jibunA}</td><td>{areaResults.m_a.toFixed(2)}</td><td>{areaResults.c_a.toFixed(2)}</td><td><strong>{areaResults.f_a}</strong></td></tr>
-                        <tr><td>{jibunB}</td><td>{areaResults.m_b.toFixed(2)}</td><td>{areaResults.c_b.toFixed(2)}</td><td><strong>{areaResults.f_b}</strong></td></tr>
+                        <tr>
+                          <td>{jibunA}</td>
+                          <td>{areaResults.m_a.toFixed(2)}</td>
+                          <td style={{ color: 'var(--error)', fontWeight: 'bold' }}>1.0000</td>
+                          <td>{origArea}</td>
+                          <td>{areaResults.c_a.toFixed(2)}</td>
+                          <td><strong>{areaResults.f_a}</strong></td>
+                        </tr>
+                        <tr>
+                          <td>{jibunB}</td>
+                          <td>{areaResults.m_b.toFixed(2)}</td>
+                          <td>-</td>
+                          <td>{origArea}</td>
+                          <td>{areaResults.c_b.toFixed(2)}</td>
+                          <td><strong>{areaResults.f_b}</strong></td>
+                        </tr>
                         <tr style={{borderTop: '2px solid var(--primary)'}}>
-                          <td>합계</td><td>{areaResults.sum_m.toFixed(2)}</td><td>{areaResults.oArea.toFixed(2)}</td><td>{areaResults.oArea}</td>
+                          <td>합계</td>
+                          <td>{areaResults.sum_m.toFixed(2)}</td>
+                          <td>-</td>
+                          <td>{origArea}</td>
+                          <td>{areaResults.oArea.toFixed(2)}</td>
+                          <td>{areaResults.oArea}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -550,7 +647,7 @@ function App() {
               </div>
             )}
 
-            {activeTab === 4 && (
+            {activeTab === 5 && (
               <div style={{textAlign: 'center', padding: '2rem'}}>
                 <Download size={48} color="var(--primary)" style={{marginBottom: '1rem'}} />
                 <h3>CAD 데이터 내보내기</h3>
