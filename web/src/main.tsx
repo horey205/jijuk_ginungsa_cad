@@ -226,8 +226,8 @@ function App() {
     const oArea = parseFloat(origArea);
     const M = parseFloat(scale.split('/')[1]);
     
-    const m_a = calculateArea([points[0], intersections[0], intersections[1], points[3]]);
-    const m_b = calculateArea([intersections[0], points[1], points[2], intersections[1]]);
+    const m_a = calculateArea([points[0], points[1], intersections[1], intersections[0], points[4]]);
+    const m_b = calculateArea([intersections[1], points[2], points[3], intersections[0]]);
     const sum_m = m_a + m_b;
     
     const ae = (0.026**2) * M * Math.sqrt(oArea);

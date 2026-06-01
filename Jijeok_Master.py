@@ -263,8 +263,8 @@ class JijeokApp:
             scale_str = self.cb_scale.get(); M = float(scale_str.split('/')[-1])
             
             # 1. 측정면적 및 보정면적 (지적 표준 Y-X 적용)
-            m_a = self.calculate_area([pts[0], inters[0], inters[1], pts[3]])
-            m_b = self.calculate_area([inters[0], pts[1], pts[2], inters[1]])
+            m_a = self.calculate_area([pts[0], pts[1], inters[1], inters[0], pts[4]])
+            m_b = self.calculate_area([inters[1], pts[2], pts[3], inters[0]])
             sum_m = m_a + m_b
             
             # 2. 공차 계산 및 판정
