@@ -230,10 +230,30 @@ function App() {
 
   // Logic: Intersection Calculation (파싱 방식)
   const handleCalcIntersects = () => {
+    if (!lSplitText.trim() || !l1Text.trim() || !l2Text.trim()) {
+      alert("분할선과 경계선 좌표 정보가 모두 입력되어야 합니다. (점 추가 및 경계 선택을 확인해 주세요)");
+      return;
+    }
     try {
       const parseLineText = (s: string) => {
+        if (!s.includes('/')) {
+          throw new Error("슬래시(/) 구분자가 누락되었습니다.");
+        }
         const l = s.split('/');
-        const p = (str: string) => str.replace(/\s+/g, '').split(',').map(Number);
+        if (l.length < 2) {
+          throw new Error("두 점의 좌표가 필요합니다.");
+        }
+        const p = (str: string) => {
+          const cleanStr = str.replace(/\s+/g, '');
+          if (!cleanStr) {
+            throw new Error("좌표 값이 비어있습니다.");
+          }
+          const parts = cleanStr.split(',').map(Number);
+          if (parts.length < 2 || parts.some(isNaN)) {
+            throw new Error("올바른 숫자 좌표(X,Y)가 아닙니다.");
+          }
+          return parts;
+        };
         const [x1, y1] = p(l[0]);
         const [x2, y2] = p(l[1]);
         return { p1: { x: x1, y: y1 }, p2: { x: x2, y: y2 } };
@@ -250,8 +270,8 @@ function App() {
       if (i1) res.push({ name: "최종1", ...i1 });
       if (i2) res.push({ name: "최종2", ...i2 });
       setIntersections(res);
-    } catch (e) {
-      alert("좌표 문자열 파싱 중 오류가 발생했습니다. 'X,Y / X,Y' 형식을 확인해 주세요.");
+    } catch (e: any) {
+      alert(`좌표 파싱 오류: ${e.message || e}\n'X,Y / X,Y' 형식을 확인해 주세요.`);
     }
   };
 
